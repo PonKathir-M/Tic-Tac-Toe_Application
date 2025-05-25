@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Creative Tic Tac Toe</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Orbitron', sans-serif;
+      background: linear-gradient(135deg, #141e30, #243b55);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .game-container {
+      text-align: center;
+      padding: 2rem;
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 20px;
+      box-shadow: 0 0 40px rgba(255, 255, 255, 0.2);
+      position: relative;
+      animation: fadeIn 2s ease;
+    }
+
+    @keyframes fadeIn {
+      0% { opacity: 0; transform: scale(0.8); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    h1 {
+      font-size: 3rem;
+      color: #00ffd5;
+      text-shadow: 0 0 10px #00ffd5;
+    }
+
+    .score {
+      margin-bottom: 1rem;
+      font-size: 1.3rem;
+      display: flex;
+      justify-content: space-around;
+      color: #ffdf00;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      gap: 10px;
+      margin: 1.5rem 0;
+    }
+
+    .cell {
+      width: 100px;
+      height: 100px;
+      font-size: 2.8rem;
+      background: #1e1e2f;
+      color: #00ffcc;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.3s ease;
+      box-shadow: 0 0 10px rgba(0,255,255,0.3);
+    }
+
+    .cell:hover {
+      background: #333;
+      transform: scale(1.05);
+    }
+
+    .cell.x { color: #ff4c4c; animation: pop 0.3s ease; }
+    .cell.o { color: #4cff4c; animation: pop 0.3s ease; }
+
+    @keyframes pop {
+      0% { transform: scale(0.5); opacity: 0.2; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    #reset {
+      padding: 10px 20px;
+      font-size: 1rem;
+      background: #ffcc00;
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 0 10px #ffcc00;
+    }
+
+    #message {
+      font-size: 1.2rem;
+      margin-top: 1rem;
+      color: #00ffcc;
+    }
+
+    .confetti {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background: yellow;
+      animation: confetti-fall 1s ease-out forwards;
+    }
+
+    @keyframes confetti-fall {
+      to {
+        transform: translateY(500px) rotate(360deg);
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="game-container">
+    <h1> Tic Tac Toe </h1>
+    <div class="score">
+      <span>X: <span id="x-score">0</span></span>
+      <span>O: <span id="o-score">0</span></span>
+    </div>
+    <div class="board" id="board"></div>
+    <button id="reset">🔁 Reset Game</button>
+    <div id="message"></div>
+  </div>
+
+  <audio id="click-sound" src="https://www.soundjay.com/buttons/sounds/button-16.mp3"></audio>
+  <audio id="win-sound" src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3"></audio>
+
+  <script>
+    const board = document.getElementById('board');
+    const resetBtn = document.getElementById('reset');
+    const message = document.getElementById('message');
+    const clickSound = document.getElementById('click-sound');
+    const winSound = document.getElementById('win-sound');
+    let xScore = 0, oScore = 0;
+    let turn = 'X';
+
+    function createBoard() {
+      board.innerHTML = '';
+      message.textContent = `Player ${turn}'s Turn`;
+      for (let i = 0; i < 9; i++) {
+        let cell = document.createElement('div');
+        cell.classList.add('cell');
+        cell.addEventListener('click', handleMove, { once: true });
+        board.appendChild(cell);
+      }
+    }
+
+    function handleMove(e) {
+      const cell = e.target;
+      cell.textContent = turn;
+      cell.classList.add(turn.toLowerCase());
+      clickSound.play();
+      if (checkWin(turn)) {
+        message.textContent = `${turn} Wins! 🎉`;
+        winSound.play();
+        launchConfetti();
+        updateScore(turn);
+        setTimeout(createBoard, 1500);
+        return;
+      }
+      if ([...board.children].every(cell => cell.textContent)) {
+        message.textContent = "It's a draw!";
+        setTimeout(createBoard, 1500);
+        return;
+      }
+      turn = turn === 'X' ? 'O' : 'X';
+      message.textContent = `Player ${turn}'s Turn`;
+    }
+
+    function checkWin(player) {
+      const cells = [...board.children];
+      const combos = [
+        [0,1,2], [3,4,5], [6,7,8],
+        [0,3,6], [1,4,7], [2,5,8],
+        [0,4,8], [2,4,6]
+      ];
+      return combos.some(c => c.every(i => cells[i].textContent === player));
+    }
+
+    function updateScore(player) {
+      if (player === 'X') xScore++;
+      else oScore++;
+      document.getElementById('x-score').textContent = xScore;
+      document.getElementById('o-score').textContent = oScore;
+    }
+
+    function launchConfetti() {
+      for (let i = 0; i < 30; i++) {
+        let confetti = document.createElement('div');
+        confetti.className = 'confetti';
+        confetti.style.left = Math.random() * 100 + '%';
+        confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
+        document.body.appendChild(confetti);
+        setTimeout(() => confetti.remove(), 1000);
+      }
+    }
+
+    resetBtn.addEventListener('click', createBoard);
+    createBoard();
+  </script>
+</body>
+</html>
